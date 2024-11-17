@@ -1,0 +1,39 @@
+
+[project]
+name = "DeepNado"
+dynamic = ["version"]
+authors = [
+  { name="Akele Reed", email="author@example.com" },
+  { name="Joshua Reed", email="author@example.com" }
+]
+description = "An enhanced Ai/Ml implementation inspired by the TorNet baseline model using PyTorch."
+readme = "README.md"
+requires-python = ">=3.10"
+#dependencies = []
+
+[build-system]
+requires = [
+    "setuptools",
+    "pathlib"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.black]
+line-length=100
+
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "black",
+    "flake8",
+    "pre-commit"
+]
+
+
+[project.urls]
+Homepage = "https://github.com/pypa/sampleproject"
+Issues = "https://github.com/pypa/sampleproject/issues"

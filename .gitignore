@@ -1,0 +1,7 @@
+# Developer specific
+build
+venv
+
+# Python stuff
+*.egg-info/
+__pycache__
