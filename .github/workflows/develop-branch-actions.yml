@@ -60,7 +60,7 @@ jobs:
       id-token: write
 
     environment:
-      name: pypi
+      name: testpypi
       url: https://test.pypi.org/p/deepnado
 
     steps:
@@ -69,3 +69,8 @@ jobs:
         with:
           name: release-dists-candidate
           path: dist/
+
+      - name: Publish distribution 📦 to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
