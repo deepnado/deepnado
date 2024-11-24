@@ -40,6 +40,10 @@ jobs:
         coverage run -m pytest
         coverage report --fail-under 40
 
+    - name: Update Package Version
+      run: |
+        python version.py -v 0.0.0-rc
+
     - name: Check Package Build
       run: |
         python -m pip install build
@@ -73,4 +77,7 @@ jobs:
       - name: Publish distribution 📦 to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          verbose: true
+          print-hash: true
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           repository-url: https://test.pypi.org/legacy/

@@ -1,4 +1,4 @@
-# DeepNado
+# deepnado
 
 This repository contains an Deep Learning Ai/Ml model inspired by the Tornet baseline model using PyTorch.
 
@@ -12,9 +12,9 @@ The author recommends use of a python virtual environment.
 
 1. python -m venv venv
 2. . ./venv/bin/activate
-3. pip install .
+3. pip install -e .
 
-To install testing and code quality packages, use ```pip install .[test]``` to install those.
+To install testing and code quality packages, use ```pip install -e .[test]``` to install those.
 
 # Reference
 
