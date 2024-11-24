@@ -47,4 +47,5 @@ jobs:
 
     - name: Check Package Build
       run: |
-        python -m build
+          python -m pip install build
+          python -m build
