@@ -1,5 +1,6 @@
 import deepnado
 
+
 class TestDefaultVersion:
 
     @classmethod
