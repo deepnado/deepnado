@@ -9,4 +9,6 @@ def get_version():
     return version
 
 
-setuptools.setup(version=get_version())
+setuptools.setup(
+    version=get_version()
+)
