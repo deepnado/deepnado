@@ -1,5 +1,6 @@
 # Developer specific
 build
+dist
 venv
 
 # Python stuff
