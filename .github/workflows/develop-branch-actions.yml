@@ -42,7 +42,7 @@ jobs:
 
     - name: Update Package Version
       run: |
-        python version.py -v 0.0.0-rc
+        python version.py -v 0.0.0-rc${{ github.run_id }}
 
     - name: Check Package Build
       run: |

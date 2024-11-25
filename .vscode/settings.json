@@ -3,5 +3,9 @@
         "tests"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "flake8.args": [
+        "--config=.flake8"
+    ],
+    "flake8.cwd": "${workspaceFolder}/src"
 }
