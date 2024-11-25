@@ -11,7 +11,7 @@ exclude =
     # This contains builds of flake8 that we don't want to check
     dist,
     # Ignore pytest dir
-    test,
+    tests,
     # Ignore virutal environment
     venv
 
