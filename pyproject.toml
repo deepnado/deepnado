@@ -19,7 +19,8 @@ test = [
     "coverage",
     "flake8",
     "pre-commit",
-    "pytest"
+    "pytest",
+    "pytest-cov"
 ]
 
 [project.scripts]

@@ -1,1 +1,7 @@
 # Required packages
+netCDF4
+numpy
+pandas
+xarray
+torch
+torchvision
