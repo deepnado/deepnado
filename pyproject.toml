@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deepnado"
-dynamic = ["version", "readme"]
+dynamic = ["dependencies", "version", "readme"]
 description = "An enhanced Ai/Ml implementation inspired by the TorNet baseline model using PyTorch."
 requires-python = ">=3.10"
 classifiers = [
