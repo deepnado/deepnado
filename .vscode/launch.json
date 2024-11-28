@@ -4,13 +4,23 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": "CLI: deepnado",
+            "name": "deepnado",
             "type": "debugpy",
             "request": "launch",
-            "python": "./venv/bin/python",
-            "program": "./venv/bin/deepnado",
-            "console": "integratedTerminal",
+            "program": "${workspaceFolder}/venv/bin/deepnado",
+            "python": "${command:python.interpreterPath}",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Plot Example",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/plot_example.py",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
         }
     ]
 }
