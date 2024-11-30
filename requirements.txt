@@ -1,7 +1,9 @@
 # Required packages
+lightning
 netCDF4
 numpy
 pandas
-xarray
 torch
 torchvision
+torchmetrics
+xarray
