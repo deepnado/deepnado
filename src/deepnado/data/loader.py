@@ -10,16 +10,59 @@ from deepnado.data import preprocess
 from deepnado.data.dataset import TornadoDataset
 from deepnado.data.utils import query_catalog
 
+def numpy_to_torch(d: Dict[str, np.ndarray]):
+    for key, val in d.items():
+        d[key] = from_numpy(np.array(val))
+    return d
+
+def remove_time_dim(data):
+    return preprocess.remove_time_dim(data)
+
+def add_coordinates(data, include_az, tilt_last):
+    return preprocess.add_coordinates(data, include_az=include_az, tilt_last=tilt_last)
+
+def split_x_y(data):
+    return preprocess.split_x_y(data)
+
+def compute_sample_weight_transform(xy, weights):
+    return preprocess.compute_sample_weight(*xy, **weights)
+
+def select_keys_transform(xy, select_keys):
+    x_selected = preprocess.select_keys(xy[0], keys=select_keys)
+    return (x_selected,) + xy[1:]
+
+
+# Wrapper functions for arguments requiring closures
+class TransformAddCoordinates:
+    def __init__(self, include_az, tilt_last):
+        self.include_az = include_az
+        self.tilt_last = tilt_last
+
+    def __call__(self, data):
+        return add_coordinates(data, self.include_az, self.tilt_last)
+
+class TransformSampleWeight:
+    def __init__(self, weights):
+        self.weights = weights
+
+    def __call__(self, xy):
+        return compute_sample_weight_transform(xy, self.weights)
+
+class TransformSelectKeys:
+    def __init__(self, select_keys):
+        self.select_keys = select_keys
+
+    def __call__(self, xy):
+        return select_keys_transform(xy, self.select_keys)
+
 
 class TornadoDataLoader:
 
     def __init__(self) -> None:
         pass
-
-    def _numpy_to_torch(self, d: Dict[str, np.ndarray]):
-        for key, val in d.items():
-            d[key] = from_numpy(np.array(val))
-        return d
+    
+    def select_keys(self, d, select_keys):
+        return preprocess.select_keys(d[0], keys=select_keys), + d[1:]
 
     def get_dataloader(
         self,
@@ -66,19 +109,17 @@ class TornadoDataLoader:
         file_list = query_catalog(data_root, data_type, years, random_state)
 
         transform_list = [
-            lambda d: self._numpy_to_torch(d),
-            lambda d: preprocess.remove_time_dim(d),
-            lambda d: preprocess.add_coordinates(d, include_az=include_az, tilt_last=tilt_last),
-            lambda d: preprocess.split_x_y(d),
+            numpy_to_torch,
+            remove_time_dim,
+            TransformAddCoordinates(include_az=include_az, tilt_last=tilt_last),
+            split_x_y,
         ]
 
         if weights:
-            transform_list.append(lambda xy: preprocess.compute_sample_weight(*xy, **weights))
+            transform_list.append(TransformSampleWeight(weights))
 
         if select_keys is not None:
-            transform_list.append(
-                lambda xy: (preprocess.select_keys(xy[0], keys=select_keys),) + xy[1:]
-            )
+            transform_list.append(TransformSelectKeys(select_keys))
 
         # Dataset, with preprocessing
         transform = transforms.Compose(transform_list)

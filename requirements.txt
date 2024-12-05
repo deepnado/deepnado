@@ -1,7 +1,11 @@
 # Required packages
+lightning
+mlflow
 netCDF4
-numpy
+numpy==1.25.2
 pandas
+pytorch-lightning
 xarray
+tensorboard
 torch
 torchvision
