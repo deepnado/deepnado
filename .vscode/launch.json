@@ -12,7 +12,8 @@
             "program": "${workspaceFolder}/venv/bin/deepnado",
             "python": "${command:python.interpreterPath}",
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "args": ["-v", "-c", "./src/deepnado/config/example_train_config.json", "-d", "./tests/unit/resources"]
         },
         {
             "name": "Plot Example",

@@ -6,11 +6,12 @@ from logging import Logger
 from deepnado.common import constants
 from deepnado.config.config import ApplicationConfig
 from deepnado.config.cli_parser import CliArgParser
+from deepnado.trainer import train
 
 
 class DeepNadoEntry:
 
-    def __init__(self, logger, data_root_cli=None) -> None:
+    def __init__(self, logger, data_root_cli=None, training_config_path=None) -> None:
         self._config = ApplicationConfig()
         self._config.parse_config_file()
         self._logger: Logger = logger
@@ -23,9 +24,14 @@ class DeepNadoEntry:
                 "User provided -d/-dataroot option via CLI. Will use as dataroot path."
             )
             self._logger.debug(f"Configured DATA_ROOT = {self._config.DATA_ROOT}")
+        if training_config_path:
+            self._training_config_path = training_config_path
+            self._logger.debug("User provided training config path. Training will be executed.")
 
     def run(self):
         self._logger.debug("Executing...")
+        if self._training_config_path:
+            train(self._logger, self._config.DATA_ROOT, self._training_config_path)
 
 
 def main():
@@ -50,5 +56,5 @@ def main():
     if verbose:
         logger.debug("The -v verbosity flag was set. Log Level overridden to DEBUG.")
 
-    deepnado = DeepNadoEntry(logger, data_root_cli=args.dataroot)
+    deepnado = DeepNadoEntry(logger, data_root_cli=args.dataroot, training_config_path=args.config)
     deepnado.run()

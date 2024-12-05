@@ -76,6 +76,13 @@ class CliArgParser(object):
             choices=constants.LOG_LEVELS_MAP.keys(),
             help="Set log level",
         )
+        parser.add_argument(
+            "-c",
+            "--config",
+            default=None,
+            type=str,
+            help="Specify path to training configuration",
+        )
 
     def _sort_args(self):
         """
