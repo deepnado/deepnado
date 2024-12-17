@@ -42,6 +42,7 @@ class LightningWrapper(pl.LightningModule):
         return self.model(batch)
         
     def training_step(self, batch, _):
+        batch = batch[0]
         y = torch.squeeze(batch.pop('label')) # [batch]
         logits = self.model(batch) # [batch,1,L,W] 
         logits = F.max_pool2d(logits, kernel_size=logits.size()[2:]) # [batch,1,1,1] 
@@ -57,7 +58,7 @@ class LightningWrapper(pl.LightningModule):
         return loss
     
     def validation_step(self,batch,_):
-        y,logits,loss=self._shared_eval(batch)
+        y,logits,loss=self._shared_eval(batch[0])
         
         # Logging..
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
@@ -75,7 +76,7 @@ class LightningWrapper(pl.LightningModule):
         return loss
 
     def _shared_eval(self,batch):
-        y = torch.squeeze(batch[0]['label']) # [batch]
+        y = torch.squeeze(batch['label']) # [batch]
         logits = self.model(batch) # [batch,1,L,W] 
         logits = F.max_pool2d(logits, kernel_size=logits.size()[2:]) # [batch,1,1,1] 
         logits = torch.cat( (-logits,logits),axis=1)  # [batch,2,1,1] 
@@ -155,7 +156,7 @@ def train(logger, data_root, training_config):
     logger.debug("Beginning training")
     tb_logger = pl.loggers.TensorBoardLogger(config["log_dir"], name=config["job_name"])
     #mlflow_logger = pl.loggers.MLFlowLogger(experiment_name=config["mlflow_name"], run_name=config["job_name"], tracking_uri="")
-    trainer = pl.Trainer(logger=[tb_logger], accelerator='auto') # add mlflow logger in here
+    trainer = pl.Trainer(logger=[tb_logger], accelerator='auto', num_sanity_val_steps=0) # add mlflow logger in here
 
     # Train the model
     trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)

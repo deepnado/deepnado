@@ -16,8 +16,8 @@ class TornadoLikelihood(nn.Module):
     """
     Produces 2D tornado likelihood field
     """
-    def __init__(self,  shape:Tuple[int]=(2,120,240),
-                        c_shape:Tuple[int]=(2,120,240),
+    def __init__(self,  shape:Tuple[int]=(120, 240, 2),#(2,120,240),
+                        c_shape:Tuple[int]=(120, 240, 2),#(2,120,240),
                         input_variables:List[str]=ALL_VARIABLES,
                         start_filters:int=64,
                         background_flag:float=-3.0,
@@ -68,7 +68,6 @@ class TornadoLikelihood(nn.Module):
         and coordinate tensor
         """
         # extract inputs
-        data = data[0]
         x = {v:data[v] for v in self.input_variables} # each [batch,tilt,Az,Rng]
         c = data['coordinates']
         
@@ -111,6 +110,19 @@ class NormalizeVariable(nn.Module):
         return (x - self.offset) * self.scale
 
 
+def maxpool2d_same(x, kernel_size, stride=1, dilation=1):
+    # Calculate padding
+    pad_h = max((x.size(2) - 1) * stride + (kernel_size - 1) * dilation + 1 - x.size(2), 0)
+    pad_w = max((x.size(3) - 1) * stride + (kernel_size - 1) * dilation + 1 - x.size(3), 0)
+    pad_top = pad_h // 2
+    pad_bottom = pad_h - pad_top
+    pad_left = pad_w // 2
+    pad_right = pad_w - pad_left
+
+    # Apply padding and pooling
+    x = torch.nn.functional.pad(x, (pad_left, pad_right, pad_top, pad_bottom))
+    return nn.functional.max_pool2d(x, kernel_size, stride, dilation=dilation)
+
 class VggBlock(nn.Module):
     """
     Processing block based on VGG19, with coord conv layers
@@ -142,8 +154,8 @@ class VggBlock(nn.Module):
                                           padding='same',
                                           activation='relu'))
         self.conv_block = nn.Sequential(*self.steps)
-        self.mx=nn.MaxPool2d(2, stride=2)
-        self.mc=nn.MaxPool2d(2, stride=2)
+        #self.mx=nn.MaxPool2d(2, stride=2) 
+        #self.mc=nn.MaxPool2d(2, stride=2)
         if drop_rate>0:
             self.drop=nn.Dropout(p=drop_rate)
         else:
@@ -152,8 +164,10 @@ class VggBlock(nn.Module):
     def forward(self, inputs):
         x,c=inputs
         x,c=self.conv_block((x,c))
-        x=self.mx(x)
-        c=self.mc(c)
+        #x=self.mx(x)
+        #c=self.mc(c)
+        x = maxpool2d_same(x, kernel_size=2, stride=2)
+        c = maxpool2d_same(c, kernel_size=2, stride=2)
         if self.drop:
             x=self.drop(x)
         return x,c
