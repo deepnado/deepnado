@@ -7,11 +7,76 @@ from deepnado.data.loader import TornadoDataLoader
 from torch import nn, optim
 from torch.optim.lr_scheduler import StepLR
 import torch.nn.functional as F
-from torchmetrics import MetricCollection
+from torchmetrics import MetricCollection, Metric, AUROC, Accuracy, Precision, Recall, ConfusionMatrix
+from torch.nn.functional import sigmoid
 
 
 from deepnado.models.baseline import TornadoLikelihood
 
+
+# Custom wrapper to handle logits
+class FromLogitsMetric(Metric):
+    def __init__(self, base_metric, from_logits=True):
+        super().__init__()
+        self.metric = base_metric
+        self.from_logits = from_logits
+
+    def update(self, y_pred, y_true):
+        if self.from_logits:
+            y_pred = torch.sigmoid(y_pred)
+        self.metric.update(y_pred, y_true)
+
+    def compute(self):
+        return self.metric.compute()
+
+    def reset(self):
+        self.metric.reset()
+
+
+# Define F1Score
+class F1Score(Metric):
+    def __init__(self, from_logits=True):
+        super().__init__()
+        self.precision = FromLogitsMetric(Precision(task="binary"), from_logits)
+        self.recall = FromLogitsMetric(Recall(task="binary"), from_logits)
+
+    def update(self, y_pred, y_true):
+        self.precision.update(y_pred, y_true)
+        self.recall.update(y_pred, y_true)
+
+    def compute(self):
+        precision = self.precision.compute()
+        recall = self.recall.compute()
+        return 2 * (precision * recall) / (precision + recall + 1e-7)
+
+    def reset(self):
+        self.precision.reset()
+        self.recall.reset()
+
+
+class ConfusionMatrixMetrics(Metric):
+    def __init__(self, task="binary", threshold=0.5):
+        super().__init__()
+        self.threshold = threshold
+        self.conf_matrix = ConfusionMatrix(task=task)
+
+    def update(self, y_pred, y_true):
+        # Apply threshold if using probabilities/logits
+        y_pred_binary = (y_pred >= self.threshold).int()
+        self.conf_matrix.update(y_pred_binary, y_true)
+
+    def compute(self):
+        conf_matrix = self.conf_matrix.compute()
+        tn, fp, fn, tp = conf_matrix.ravel()  # Unpack the confusion matrix
+        return {
+            "TruePositives": tp.item(),
+            "FalsePositives": fp.item(),
+            "TrueNegatives": tn.item(),
+            "FalseNegatives": fn.item()
+        }
+
+    def reset(self):
+        self.conf_matrix.reset()
 
 class LightningWrapper(pl.LightningModule):
     """
@@ -33,7 +98,15 @@ class LightningWrapper(pl.LightningModule):
             self.loss = nn.HingeEmbeddingLoss() # probably need to convert labels to -1, 1 if using this?
         elif config["loss"] == "mae":
             self.loss = nn.L1Loss()
-        metrics = MetricCollection([]) # TODO add the metrics here
+        metrics = MetricCollection({
+                "AUC": FromLogitsMetric(AUROC(task="binary"), from_logits=True),
+                "AUCPR": FromLogitsMetric(AUROC(task="binary", average="macro"), from_logits=True),
+                "BinaryAccuracy": FromLogitsMetric(Accuracy(task="binary"), from_logits=True),
+                "ConfusionMatrix": ConfusionMatrixMetrics(task="binary"),
+                "Precision": FromLogitsMetric(Precision(task="binary"), from_logits=True),
+                "Recall": FromLogitsMetric(Recall(task="binary"), from_logits=True),
+                "F1": F1Score(from_logits=True)
+            }) 
         self.train_metrics = metrics.clone(prefix='train_')
         self.valid_metrics = metrics.clone(prefix='val_')
         self.test_metrics = metrics.clone(prefix='test_')
@@ -155,8 +228,9 @@ def train(logger, data_root, training_config):
     # Instantiate Pytorch lightning trainer 
     logger.debug("Beginning training")
     tb_logger = pl.loggers.TensorBoardLogger(config["log_dir"], name=config["job_name"])
-    #mlflow_logger = pl.loggers.MLFlowLogger(experiment_name=config["mlflow_name"], run_name=config["job_name"], tracking_uri="")
-    trainer = pl.Trainer(logger=[tb_logger], accelerator='auto', num_sanity_val_steps=0) # add mlflow logger in here
+    mlflow_logger = pl.loggers.MLFlowLogger(experiment_name=config["mlflow_name"], run_name=config["job_name"], tracking_uri="http://mnemosyne.local:5555/")
+    mlflow_logger.log_hyperparams(config)
+    trainer = pl.Trainer(logger=[tb_logger, mlflow_logger], accelerator='auto', num_sanity_val_steps=0)
 
     # Train the model
     trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)
