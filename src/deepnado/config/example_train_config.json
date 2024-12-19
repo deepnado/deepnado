@@ -19,7 +19,7 @@
     "label_smooth":0,
     "loss":"cce",
     "head":"maxpool",
-    "mlflow_name": "setup_logging",
-    "job_name":"tornado_baseline",
+    "mlflow_name": "dev",
+    "job_name":"dev_run",
     "log_dir": "./sample_run_logdir/"
 }
