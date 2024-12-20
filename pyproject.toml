@@ -22,6 +22,7 @@ test = [
     "coverage",
     "flake8",
     "pre-commit",
+    "pypi_simple",
     "pytest",
     "pytest-cov"
 ]
