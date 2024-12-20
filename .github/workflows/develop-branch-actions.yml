@@ -42,11 +42,14 @@ jobs:
 
     - uses: actions-ecosystem/action-get-latest-tag@v1
       id: get-latest-tag
+      with:
+        semver_only: true
 
     - uses: actions-ecosystem/action-bump-semver@v1
       id: bump-semver
       with:
         current_version: ${{ steps.get-latest-tag.outputs.tag }}
+        level: patch
 
       # version.py will compute the release candidate number.
     - name: Update Package Version

@@ -32,6 +32,10 @@ def compute_release_candidate(is_test_pypi=False) -> int:
 
         requests_page = client.get_project_page("deepnado")
 
+        # Means there are no packages and this is the first EVER.
+        if len(requests_page.packages) == 0:
+            return rc_number
+
         # Get most recent last package
         pkg = requests_page.packages[-1]
 
