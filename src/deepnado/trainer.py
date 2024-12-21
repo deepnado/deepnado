@@ -124,17 +124,17 @@ class LightningWrapper(pl.LightningModule):
         loss = self.loss(logits, y)
         
         # Logging..
-        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         if self.train_metrics:
             met_out = self.train_metrics(logits[:,1],y)
-            self.log_dict(met_out, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+            self.log_dict(met_out, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         return loss
     
     def validation_step(self,batch,_):
         y,logits,loss=self._shared_eval(batch[0])
         
         # Logging..
-        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         if self.valid_metrics:
             self._log_metrics(self.valid_metrics,y,logits)
         return loss
@@ -143,7 +143,7 @@ class LightningWrapper(pl.LightningModule):
         y,logits,loss=self._shared_eval(batch)
         
         # Logging..
-        self.log("test_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log("test_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         if self.test_metrics:
             self._log_metrics(self.test_metrics,y,logits)
         return loss
@@ -159,8 +159,7 @@ class LightningWrapper(pl.LightningModule):
     
     def _log_metrics(self,metrics,y,logits):
         met_out = metrics(logits[:,1],y)
-        self.log_dict(met_out, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-
+        self.log_dict(met_out, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
 
     
     def configure_optimizers(self):
@@ -230,7 +229,7 @@ def train(logger, data_root, training_config):
     tb_logger = pl.loggers.TensorBoardLogger(config["log_dir"], name=config["job_name"])
     mlflow_logger = pl.loggers.MLFlowLogger(experiment_name=config["mlflow_name"], run_name=config["job_name"], tracking_uri="http://mnemosyne.local:5555/")
     mlflow_logger.log_hyperparams(config)
-    trainer = pl.Trainer(logger=[tb_logger, mlflow_logger], accelerator='auto', num_sanity_val_steps=0)
+    trainer = pl.Trainer(logger=[tb_logger, mlflow_logger], accelerator='auto', num_sanity_val_steps=0, max_epochs=config["epochs"])
 
     # Train the model
     trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)
