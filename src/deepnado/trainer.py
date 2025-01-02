@@ -209,7 +209,7 @@ def train(logger, data_root, training_config):
     weights = {"wN": config["wN"], "w0": config["w0"], 
                "w1": config["w1"], "w2": config["w2"], "wW": config["wW"]}
     train_loader = TornadoDataLoader().get_dataloader(data_root, 
-                                                      data_type="test",#"train", TODO Change back - just for local debug
+                                                      data_type="train",
                                                       years=config["train_years"],
                                                       batch_size=config["batch_size"],
                                                       weights=weights,
