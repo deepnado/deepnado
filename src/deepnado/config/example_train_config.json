@@ -21,5 +21,6 @@
     "head":"maxpool",
     "mlflow_name": "dev",
     "job_name":"dev_run",
-    "log_dir": "./sample_run_logdir/"
+    "log_dir": "./sample_run_logdir/",
+    "devices": -1
 }

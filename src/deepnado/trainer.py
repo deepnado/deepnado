@@ -98,18 +98,18 @@ class LightningWrapper(pl.LightningModule):
             self.loss = nn.HingeEmbeddingLoss() # probably need to convert labels to -1, 1 if using this?
         elif config["loss"] == "mae":
             self.loss = nn.L1Loss()
-        metrics = MetricCollection({
-                "AUC": FromLogitsMetric(AUROC(task="binary"), from_logits=True),
-                "AUCPR": FromLogitsMetric(AUROC(task="binary", average="macro"), from_logits=True),
-                "BinaryAccuracy": FromLogitsMetric(Accuracy(task="binary"), from_logits=True),
-                "ConfusionMatrix": ConfusionMatrixMetrics(task="binary"),
-                "Precision": FromLogitsMetric(Precision(task="binary"), from_logits=True),
-                "Recall": FromLogitsMetric(Recall(task="binary"), from_logits=True),
-                "F1": F1Score(from_logits=True)
-            }) 
-        self.train_metrics = metrics.clone(prefix='train_')
-        self.valid_metrics = metrics.clone(prefix='val_')
-        self.test_metrics = metrics.clone(prefix='test_')
+        # metrics = MetricCollection({
+        #         "AUC": FromLogitsMetric(AUROC(task="binary"), from_logits=True),
+        #         "AUCPR": FromLogitsMetric(AUROC(task="binary", average="macro"), from_logits=True),
+        #         "BinaryAccuracy": FromLogitsMetric(Accuracy(task="binary"), from_logits=True),
+        #         "ConfusionMatrix": ConfusionMatrixMetrics(task="binary"),
+        #         "Precision": FromLogitsMetric(Precision(task="binary"), from_logits=True),
+        #         "Recall": FromLogitsMetric(Recall(task="binary"), from_logits=True),
+        #         "F1": F1Score(from_logits=True)
+        #     }) 
+        self.train_metrics = None#metrics.clone(prefix='train_')
+        self.valid_metrics = None#metrics.clone(prefix='val_')
+        self.test_metrics = None#metrics.clone(prefix='test_')
 
     def forward(self,batch):
         return self.model(batch)
@@ -194,6 +194,7 @@ def validate_log_config(config):
     assert config["loss"] in loss_options, f'Unknown loss type {config["loss"]}. Allowed options are {loss_options}'
     assert config["head"] in head_options, f'Unknown head type {config["head"]}. Allowed options are {head_options}'
     assert isinstance(config["job_name"], str) and not config["job_name"].strip() == "", "Please provide a valid string experiment name."
+    assert isinstance(config["devices"], int) or isinstance(config["devices"], list), "Please specify devices as -1 for default or device IDs like [0, 1, 2]"
     return config
 
 def train(logger, data_root, training_config):
@@ -229,7 +230,8 @@ def train(logger, data_root, training_config):
     tb_logger = pl.loggers.TensorBoardLogger(config["log_dir"], name=config["job_name"])
     mlflow_logger = pl.loggers.MLFlowLogger(experiment_name=config["mlflow_name"], run_name=config["job_name"], tracking_uri="http://mnemosyne.local:5555/")
     mlflow_logger.log_hyperparams(config)
-    trainer = pl.Trainer(logger=[tb_logger, mlflow_logger], accelerator='auto', num_sanity_val_steps=0, max_epochs=config["epochs"])
+    trainer = pl.Trainer(logger=[tb_logger, mlflow_logger], accelerator='auto', devices=config["devices"], 
+                         num_sanity_val_steps=0, max_epochs=config["epochs"])
 
     # Train the model
     trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)
