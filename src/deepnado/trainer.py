@@ -98,18 +98,18 @@ class LightningWrapper(pl.LightningModule):
             self.loss = nn.HingeEmbeddingLoss() # probably need to convert labels to -1, 1 if using this?
         elif config["loss"] == "mae":
             self.loss = nn.L1Loss()
-        # metrics = MetricCollection({
-        #         "AUC": FromLogitsMetric(AUROC(task="binary"), from_logits=True),
-        #         "AUCPR": FromLogitsMetric(AUROC(task="binary", average="macro"), from_logits=True),
-        #         "BinaryAccuracy": FromLogitsMetric(Accuracy(task="binary"), from_logits=True),
-        #         "ConfusionMatrix": ConfusionMatrixMetrics(task="binary"),
-        #         "Precision": FromLogitsMetric(Precision(task="binary"), from_logits=True),
-        #         "Recall": FromLogitsMetric(Recall(task="binary"), from_logits=True),
-        #         "F1": F1Score(from_logits=True)
-        #     }) 
-        self.train_metrics = None#metrics.clone(prefix='train_')
-        self.valid_metrics = None#metrics.clone(prefix='val_')
-        self.test_metrics = None#metrics.clone(prefix='test_')
+        metrics = MetricCollection({
+                "AUC": FromLogitsMetric(AUROC(task="binary"), from_logits=True),
+                "AUCPR": FromLogitsMetric(AUROC(task="binary", average="macro"), from_logits=True),
+                "BinaryAccuracy": FromLogitsMetric(Accuracy(task="binary"), from_logits=True),
+                "ConfusionMatrix": ConfusionMatrixMetrics(task="binary"),
+                "Precision": FromLogitsMetric(Precision(task="binary"), from_logits=True),
+                "Recall": FromLogitsMetric(Recall(task="binary"), from_logits=True),
+                "F1": F1Score(from_logits=True)
+            }) 
+        self.train_metrics = metrics.clone(prefix='train_')
+        self.valid_metrics = metrics.clone(prefix='val_')
+        self.test_metrics = metrics.clone(prefix='test_')
 
     def forward(self,batch):
         return self.model(batch)
