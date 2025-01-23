@@ -93,7 +93,7 @@ class LightningWrapper(pl.LightningModule):
         self.lr_decay_rate=config["lr_decay_rate"]
         self.lr_decay_steps=config["lr_decay_steps"]
         if config["loss"] == "cce":
-            self.loss = nn.BCEWithLogitsLoss() # CrossEntropyLosslabel_smoothing=config["label_smooth"]
+            self.loss = nn.BCEWithLogitsLoss()#nn.CrossEntropyLoss(label_smoothing=config["label_smooth"]) #
         elif config["loss"] == "hinge":
             self.loss = nn.HingeEmbeddingLoss() # probably need to convert labels to -1, 1 if using this?
         elif config["loss"] == "mae":
@@ -119,14 +119,14 @@ class LightningWrapper(pl.LightningModule):
         y = torch.squeeze(batch.pop('label')) # [batch]
         logits = self.model(batch) # [batch,1,L,W] 
         logits = F.max_pool2d(logits, kernel_size=logits.size()[2:]) # [batch,1,1,1] 
-        logits = torch.cat( (-logits,logits),axis=1)  # [batch,2,1,1] 
+        #logits = torch.cat( (-logits,logits),axis=1)  # [batch,2,1,1] 
         logits = torch.squeeze(logits) # [batch,2] for binary classification
-        loss = self.loss(logits, y)
+        loss = self.loss(logits, y.float())
         
         # Logging..
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         if self.train_metrics:
-            met_out = self.train_metrics(logits[:,1],y)
+            met_out = self.train_metrics(logits, y)#logits[:,1],y)
             self.log_dict(met_out, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         return loss
     
@@ -152,13 +152,13 @@ class LightningWrapper(pl.LightningModule):
         y = torch.squeeze(batch['label']) # [batch]
         logits = self.model(batch) # [batch,1,L,W] 
         logits = F.max_pool2d(logits, kernel_size=logits.size()[2:]) # [batch,1,1,1] 
-        logits = torch.cat( (-logits,logits),axis=1)  # [batch,2,1,1] 
+        #logits = torch.cat( (-logits,logits),axis=1)  # [batch,2,1,1] 
         logits = torch.squeeze(logits) # [batch,2] for binary classification
-        loss = self.loss(logits, y)
+        loss = self.loss(logits, y.float())
         return y,logits,loss
     
     def _log_metrics(self,metrics,y,logits):
-        met_out = metrics(logits[:,1],y)
+        met_out = metrics(logits, y)#logits[:,1],y)
         self.log_dict(met_out, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
 
     
