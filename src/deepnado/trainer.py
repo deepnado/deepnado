@@ -93,7 +93,7 @@ class LightningWrapper(pl.LightningModule):
         self.lr_decay_rate=config["lr_decay_rate"]
         self.lr_decay_steps=config["lr_decay_steps"]
         if config["loss"] == "cce":
-            self.loss = nn.CrossEntropyLoss(label_smoothing=config["label_smooth"]) # this should maybe be BCELoss?
+            self.loss = nn.BCEWithLogitsLoss(label_smoothing=config["label_smooth"]) # CrossEntropyLoss
         elif config["loss"] == "hinge":
             self.loss = nn.HingeEmbeddingLoss() # probably need to convert labels to -1, 1 if using this?
         elif config["loss"] == "mae":
