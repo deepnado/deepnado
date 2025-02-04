@@ -93,19 +93,19 @@ class LightningWrapper(pl.LightningModule):
         self.lr_decay_rate=config["lr_decay_rate"]
         self.lr_decay_steps=config["lr_decay_steps"]
         if config["loss"] == "cce":
-            self.loss = nn.BCEWithLogitsLoss()#nn.CrossEntropyLoss(label_smoothing=config["label_smooth"]) #
+            self.loss = nn.CrossEntropyLoss(label_smoothing=config["label_smooth"]) #nn.BCEWithLogitsLoss()
         elif config["loss"] == "hinge":
             self.loss = nn.HingeEmbeddingLoss() # probably need to convert labels to -1, 1 if using this?
         elif config["loss"] == "mae":
             self.loss = nn.L1Loss()
         metrics = MetricCollection({
-                "AUC": FromLogitsMetric(AUROC(task="binary"), from_logits=True),
-                "AUCPR": FromLogitsMetric(AUROC(task="binary", average="macro"), from_logits=True),
-                "BinaryAccuracy": FromLogitsMetric(Accuracy(task="binary"), from_logits=True),
-                "ConfusionMatrix": ConfusionMatrixMetrics(task="binary"),
-                "Precision": FromLogitsMetric(Precision(task="binary"), from_logits=True),
-                "Recall": FromLogitsMetric(Recall(task="binary"), from_logits=True),
-                "F1": F1Score(from_logits=True)
+                "AUC": FromLogitsMetric(AUROC(task="multiclass", num_classes=2), from_logits=True),
+                #"AUCPR": FromLogitsMetric(AUROC(task="binary", average="macro"), from_logits=True),
+                #"BinaryAccuracy": FromLogitsMetric(Accuracy(task="binary"), from_logits=True),
+                #"ConfusionMatrix": ConfusionMatrixMetrics(task="multiclass", num_classes=2),
+                #"Precision": FromLogitsMetric(Precision(task="binary"), from_logits=True),
+                #"Recall": FromLogitsMetric(Recall(task="binary"), from_logits=True),
+                #"F1": F1Score(from_logits=True)
             }) 
         self.train_metrics = metrics.clone(prefix='train_')
         self.valid_metrics = metrics.clone(prefix='val_')
@@ -119,9 +119,9 @@ class LightningWrapper(pl.LightningModule):
         y = torch.squeeze(batch.pop('label')) # [batch]
         logits = self.model(batch) # [batch,1,L,W] 
         logits = F.max_pool2d(logits, kernel_size=logits.size()[2:]) # [batch,1,1,1] 
-        #logits = torch.cat( (-logits,logits),axis=1)  # [batch,2,1,1] 
+        logits = torch.cat( (-logits,logits),axis=1)  # [batch,2,1,1] 
         logits = torch.squeeze(logits) # [batch,2] for binary classification
-        loss = self.loss(logits, y.float())
+        loss = self.loss(logits, y)
         
         # Logging..
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
@@ -152,9 +152,9 @@ class LightningWrapper(pl.LightningModule):
         y = torch.squeeze(batch['label']) # [batch]
         logits = self.model(batch) # [batch,1,L,W] 
         logits = F.max_pool2d(logits, kernel_size=logits.size()[2:]) # [batch,1,1,1] 
-        #logits = torch.cat( (-logits,logits),axis=1)  # [batch,2,1,1] 
+        logits = torch.cat( (-logits,logits),axis=1)  # [batch,2,1,1] 
         logits = torch.squeeze(logits) # [batch,2] for binary classification
-        loss = self.loss(logits, y.float())
+        loss = self.loss(logits, y)
         return y,logits,loss
     
     def _log_metrics(self,metrics,y,logits):
